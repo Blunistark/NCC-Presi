@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, AppBar, Toolbar, styled, Stack, IconButton, Badge, Button } from '@mui/material';
 import PropTypes from 'prop-types';
 import Link from 'next/link';
@@ -7,10 +7,17 @@ import Profile from './Profile';
 import { IconBellRinging, IconMenu } from '@tabler/icons-react';
 
 interface ItemType {
-  toggleMobileSidebar:  (event: React.MouseEvent<HTMLElement>) => void;
+  toggleMobileSidebar: (event: React.MouseEvent<HTMLElement>) => void;
 }
 
-const Header = ({toggleMobileSidebar}: ItemType) => {
+const Header = ({ toggleMobileSidebar }: ItemType) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    // Check if user is logged in
+    const userRole = localStorage.getItem("userRole");
+    setIsAuthenticated(!!userRole);
+  }, []);
 
   // const lgUp = useMediaQuery((theme) => theme.breakpoints.up('lg'));
   // const lgDown = useMediaQuery((theme) => theme.breakpoints.down('lg'));
@@ -62,10 +69,13 @@ const Header = ({toggleMobileSidebar}: ItemType) => {
         </IconButton>
         <Box flexGrow={1} />
         <Stack spacing={1} direction="row" alignItems="center">
-          <Button variant="contained" component={Link} href="/authentication/login"   disableElevation color="primary" >
-            Login
-          </Button>
-          <Profile />
+          {isAuthenticated ? (
+            <Profile />
+          ) : (
+            <Button variant="contained" component={Link} href="/authentication/login" disableElevation color="primary" >
+              Login
+            </Button>
+          )}
         </Stack>
       </ToolbarStyled>
     </AppBarStyled>

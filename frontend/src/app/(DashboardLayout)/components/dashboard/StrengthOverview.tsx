@@ -29,7 +29,10 @@ const StrengthOverview = () => {
         const fetchStrength = async () => {
             try {
                 const response = await fetch('http://localhost:8000/strength');
-                if (!response.ok) throw new Error('Failed');
+                if (!response.ok) {
+                    console.error('Fetch error:', response.status, response.statusText);
+                    throw new Error(`Failed with status: ${response.status}`);
+                }
                 const data = await response.json();
 
                 // Transform API data to component format

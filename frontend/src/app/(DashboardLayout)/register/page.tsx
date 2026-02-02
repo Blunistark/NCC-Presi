@@ -8,7 +8,7 @@ const RegisterPage = () => {
         <PageContainer title="Register Cadet" description="Register Cadet Face for Attendance">
             <Box>
                 <Grid container spacing={3} justifyContent="center">
-                    <Grid item xs={12} md={8} lg={6}>
+                    <Grid size={{ xs: 12, md: 8, lg: 6 }}>
                         <FaceRegistration />
                     </Grid>
                 </Grid>
