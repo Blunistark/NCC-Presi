@@ -17,12 +17,12 @@ const NCCStats = () => {
         const fetchData = async () => {
             try {
                 // Fetch Strength
-                const strengthRes = await fetch('http://localhost:8000/strength');
+                const strengthRes = await fetch('/api/strength');
                 const strengthData = await strengthRes.json();
                 const totalStrength = strengthData.total || 0;
 
                 // Fetch Events
-                const eventsRes = await fetch('http://localhost:8000/events');
+                const eventsRes = await fetch('/api/events');
                 const eventsData = await eventsRes.json();
 
                 const mandatoryCount = eventsData.filter((e: any) => e.Type === 'Mandatory Parade').length;

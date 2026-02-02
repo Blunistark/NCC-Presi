@@ -38,7 +38,7 @@ const AttendancePage = () => {
     const fetchActiveEvents = async () => {
         setLoading(true);
         try {
-            const response = await fetch('http://localhost:8000/events');
+            const response = await fetch('/api/events');
             if (response.ok) {
                 const data = await response.json();
                 setActiveEvents(data);

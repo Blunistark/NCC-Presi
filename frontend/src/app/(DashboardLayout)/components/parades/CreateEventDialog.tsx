@@ -64,7 +64,7 @@ const CreateEventDialog = ({ open, onClose }: CreateEventDialogProps) => {
         };
 
         try {
-            const response = await fetch('http://localhost:8000/create_event', {
+            const response = await fetch('/api/create_event', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

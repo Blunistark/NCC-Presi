@@ -51,7 +51,7 @@ const FaceAttendance = ({ eventId }: FaceAttendanceProps) => {
             // Note: Recognize currently checks todays_attendance which is memory based. 
             // We might want to remove that check eventually if valid for multiple events, 
             // but backend handles duplicates okay now.
-            const recognizeRes = await fetch('http://localhost:8000/recognize', {
+            const recognizeRes = await fetch('/api/recognize', {
                 method: 'POST',
                 body: formData,
             });
@@ -69,7 +69,7 @@ const FaceAttendance = ({ eventId }: FaceAttendanceProps) => {
             logFormData.append('reg_no', data.reg_no);
             logFormData.append('event_id', eventId);
 
-            const logRes = await fetch('http://localhost:8000/log_attendance', {
+            const logRes = await fetch('/api/log_attendance', {
                 method: 'POST',
                 body: logFormData,
             });

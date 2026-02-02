@@ -28,7 +28,7 @@ const StrengthOverview = () => {
     useEffect(() => {
         const fetchStrength = async () => {
             try {
-                const response = await fetch('http://localhost:8000/strength');
+                const response = await fetch('/api/strength');
                 if (!response.ok) {
                     console.error('Fetch error:', response.status, response.statusText);
                     throw new Error(`Failed with status: ${response.status}`);

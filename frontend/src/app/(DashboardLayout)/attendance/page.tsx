@@ -54,7 +54,7 @@ const AttendancePage = () => {
     useEffect(() => {
         const fetchAttendance = async () => {
             try {
-                const res = await fetch('http://localhost:8000/attendance-summary');
+                const res = await fetch('/api/attendance-summary');
                 if (!res.ok) throw new Error("Failed to fetch");
                 const data = await res.json();
                 setRecords(data);

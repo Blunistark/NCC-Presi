@@ -22,7 +22,7 @@ const Camps = () => {
     useEffect(() => {
         const fetchEvents = async () => {
             try {
-                const response = await fetch('http://localhost:8000/events');
+                const response = await fetch('/api/events');
                 if (!response.ok) throw new Error('Failed');
                 const data = await response.json();
                 setEvents(data.filter((e: Event) => e.Type === 'Camp'));

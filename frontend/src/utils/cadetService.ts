@@ -2,7 +2,7 @@ import { Cadet } from './mockCadets';
 
 export const fetchCadets = async (): Promise<Cadet[]> => {
     try {
-        const response = await fetch('http://localhost:8000/cadets');
+        const response = await fetch('/api/cadets');
         if (!response.ok) throw new Error('Failed to fetch cadets');
         const data = await response.json();
         return data;
