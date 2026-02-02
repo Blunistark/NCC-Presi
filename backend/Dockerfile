@@ -1,21 +1,14 @@
-FROM python:3.10-slim
+FROM continuumio/miniconda3
 
 WORKDIR /app
 
-# Install system dependencies for dlib and face_recognition
-RUN apt-get update && apt-get install -y \
-    cmake \
-    build-essential \
-    libopenblas-dev \
-    liblapack-dev \
-    libx11-dev \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+# Install dlib (main bottleneck) and numpy using conda-forge binaries
+RUN conda install -y -c conda-forge dlib numpy cmake && \
+    conda clean -afy
 
-# Copy requirements and install Python dependencies
+# Copy requirements and install remaining Python dependencies directly
 COPY requirements.txt .
-RUN pip install --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir --prefer-binary -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application code
 COPY . .
