@@ -279,8 +279,8 @@ async def create_event(event: EventCreate):
         try:
             worksheet = spreadsheet.worksheet("Event_Master")
         except gspread.exceptions.WorksheetNotFound:
-            worksheet = spreadsheet.add_worksheet(title="Event_Master", rows=1000, cols=6)
-            worksheet.append_row(["Event ID", "Title", "Type", "Date", "Time", "Created At"])
+            worksheet = spreadsheet.add_worksheet(title="Event_Master", rows=1000, cols=7)
+            worksheet.append_row(["Event ID", "Title", "Type", "Date", "Time", "Created At", "Status"])
             
         # Generate Event ID
         event_id = f"EVT-{int(datetime.now().timestamp())}"
@@ -291,13 +291,80 @@ async def create_event(event: EventCreate):
             event.type,
             event.date,
             event.time,
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            event.time,
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "Active" # Status
         ])
         
         return {"message": "Event created successfully", "event_id": event_id}
         
     except Exception as e:
         print(f"Error creating event: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/active_event")
+def get_active_event():
+    """
+    Fetches the most recent 'Active' event.
+    """
+    if not os.path.exists(CREDENTIALS_FILE):
+        return None
+        
+    SHEET_ID = '11yk2xohYru3MyqqnXzTYBIr3lFkWbXsVOP2P7PRDbfE'
+    
+    try:
+        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        creds = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_FILE, scope)
+        client = gspread.authorize(creds)
+        spreadsheet = client.open_by_key(SHEET_ID)
+        worksheet = spreadsheet.worksheet("Event_Master")
+        
+        records = worksheet.get_all_records()
+        # Look for the last 'Active' event
+        for event in reversed(records):
+            if str(event.get("Status")).lower() == "active":
+                return event
+                
+        return None # No active event
+        
+    except Exception as e:
+        print(f"Error fetching active event: {e}")
+        return None
+
+@app.post("/end_event")
+def end_event():
+    """
+    Marks the currently active event as 'Ended'.
+    """
+    if not os.path.exists(CREDENTIALS_FILE):
+        raise HTTPException(status_code=500, detail="Credentials missing")
+        
+    SHEET_ID = '11yk2xohYru3MyqqnXzTYBIr3lFkWbXsVOP2P7PRDbfE'
+    
+    try:
+        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        creds = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_FILE, scope)
+        client = gspread.authorize(creds)
+        spreadsheet = client.open_by_key(SHEET_ID)
+        worksheet = spreadsheet.worksheet("Event_Master")
+        
+        records = worksheet.get_all_records()
+        
+        # Find last active
+        row_index = -1
+        for i, event in enumerate(records):
+            if str(event.get("Status")).lower() == "active":
+                row_index = i + 2 # +2 because 1-based index and header row
+        
+        if row_index != -1:
+            # Assuming "Status" is the 7th column
+            worksheet.update_cell(row_index, 7, "Ended")
+            return {"message": "Event ended successfully"}
+            
+        return {"message": "No active event found"}
+
+    except Exception as e:
+        print(f"Error ending event: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/events")
@@ -362,7 +429,8 @@ def log_to_sheet_raw(enrollment_id, name, event_id, status="Present"):
 async def log_attendance_endpoint(
     name: str = Form(...), 
     reg_no: str = Form(None), 
-    event_id: str = Form(...), # Changed from od_status/hours for generic flow
+    event_id: str = Form(...), 
+    status: str = Form("Present"),
     background_tasks: BackgroundTasks = BackgroundTasks()
 ):
     global todays_attendance
@@ -370,7 +438,7 @@ async def log_attendance_endpoint(
     # Simple deduplication per session instace (optional, sheet likely handles it better via script or unique index)
     # Removing blocking check to allow multiple events same day if needed
     
-    background_tasks.add_task(log_to_sheet_raw, reg_no, name, event_id)
+    background_tasks.add_task(log_to_sheet_raw, reg_no, name, event_id, status)
     return {"message": f"Attendance logged for {name}"}
 
 @app.get("/parade-stats")

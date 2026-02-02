@@ -36,14 +36,34 @@ const DashboardView = ({ role }: DashboardViewProps) => {
                     </Typography>
                     <Stack direction="row" spacing={2}>
                         {role === 'SUO' && (
-                            <Button
-                                variant="contained"
-                                color="secondary"
-                                startIcon={<IconScan />}
-                                onClick={() => router.push('/suo/attendance')}
-                            >
-                                Mark Attendance
-                            </Button>
+                            <>
+                                <Button
+                                    variant="contained"
+                                    color="secondary"
+                                    startIcon={<IconScan />}
+                                    onClick={() => router.push('/suo/attendance')}
+                                >
+                                    Mark Attendance
+                                </Button>
+                                <Button
+                                    variant="outlined"
+                                    color="error"
+                                    onClick={async () => {
+                                        if (confirm('Are you sure you want to END the current event?')) {
+                                            try {
+                                                const res = await fetch('http://localhost:8000/end_event', { method: 'POST' });
+                                                if (res.ok) alert('Event Ended Successfully');
+                                                else alert('Failed to end event');
+                                            } catch (e) {
+                                                console.error(e);
+                                                alert('Error ending event');
+                                            }
+                                        }
+                                    }}
+                                >
+                                    End Event
+                                </Button>
+                            </>
                         )}
                         <Button
                             variant="contained"

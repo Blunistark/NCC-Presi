@@ -1,26 +1,31 @@
 'use client';
 import { useState, useRef } from 'react';
-import { Box, Button, Typography, Stack, Alert, Card, CardContent, CircularProgress } from '@mui/material';
-import { IconScan, IconCheck, IconX } from '@tabler/icons-react';
+import { Box, Button, Typography, Stack, Alert, Card, CardContent, CircularProgress, Grid, FormControlLabel, Checkbox } from '@mui/material';
+import { IconScan, IconCheck, IconX, IconUserCheck, IconClock } from '@tabler/icons-react';
 
 interface FaceAttendanceProps {
     eventId: string;
 }
 
+type RecognitionStep = 'scanning' | 'verified' | 'od_selection' | 'success' | 'error';
+
 const FaceAttendance = ({ eventId }: FaceAttendanceProps) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isStreamActive, setIsStreamActive] = useState(false);
-    const [scanResult, setScanResult] = useState<{
-        success: boolean;
-        name?: string;
-        regNo?: string;
-        message: string;
-    } | null>(null);
+
+    // State for the new flow
+    const [step, setStep] = useState<RecognitionStep>('scanning');
+    const [detectedPerson, setDetectedPerson] = useState<{ name: string; regNo: string } | null>(null);
+    const [selectedHours, setSelectedHours] = useState<number[]>([]);
+    const [message, setMessage] = useState<string>('');
     const [loading, setLoading] = useState(false);
 
     const startCamera = async () => {
-        setScanResult(null);
+        setStep('scanning');
+        setDetectedPerson(null);
+        setSelectedHours([]);
+        setMessage('');
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
             if (videoRef.current) {
@@ -28,7 +33,8 @@ const FaceAttendance = ({ eventId }: FaceAttendanceProps) => {
                 setIsStreamActive(true);
             }
         } catch (err) {
-            setScanResult({ success: false, message: 'Camera access denied' });
+            setStep('error');
+            setMessage('Camera access denied');
         }
     };
 
@@ -41,16 +47,12 @@ const FaceAttendance = ({ eventId }: FaceAttendanceProps) => {
         }
     };
 
-    const processAttendance = async (blob: Blob) => {
+    const processRecognition = async (blob: Blob) => {
         setLoading(true);
         const formData = new FormData();
         formData.append('file', blob, 'scan.jpg');
 
         try {
-            // Step 1: Recognize
-            // Note: Recognize currently checks todays_attendance which is memory based. 
-            // We might want to remove that check eventually if valid for multiple events, 
-            // but backend handles duplicates okay now.
             const recognizeRes = await fetch('/api/recognize', {
                 method: 'POST',
                 body: formData,
@@ -58,40 +60,65 @@ const FaceAttendance = ({ eventId }: FaceAttendanceProps) => {
             const data = await recognizeRes.json();
 
             if (!data.match) {
-                setScanResult({ success: false, message: 'Face not recognized. Try again.' });
+                setMessage('Face not recognized. Try again.');
                 setLoading(false);
-                return;
+                return; // Keep camera running or let user try again
             }
 
-            // Step 2: Log Attendance
-            const logFormData = new FormData();
-            logFormData.append('name', data.name);
-            logFormData.append('reg_no', data.reg_no);
-            logFormData.append('event_id', eventId);
+            // Match found! Pause and show options
+            setDetectedPerson({ name: data.name, regNo: data.reg_no });
+            setStep('verified');
+            // We do NOT stop the camera here to keep the "live" feel, 
+            // but we stop auto-scanning (if we had a loop). 
+            // Since this is manual trigger, we just wait.
 
+        } catch (error) {
+            console.error(error);
+            setMessage('System error during recognition.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const submitAttendance = async (status: string) => {
+        if (!detectedPerson) return;
+        setLoading(true);
+
+        const logFormData = new FormData();
+        logFormData.append('name', detectedPerson.name);
+        logFormData.append('reg_no', detectedPerson.regNo);
+        logFormData.append('event_id', eventId);
+        logFormData.append('status', status);
+
+        try {
             const logRes = await fetch('/api/log_attendance', {
                 method: 'POST',
                 body: logFormData,
             });
 
             if (logRes.ok) {
-                setScanResult({
-                    success: true,
-                    name: data.name,
-                    regNo: data.reg_no,
-                    message: 'Marked Present ✅'
-                });
+                setStep('success');
+                setMessage(status === 'Present' ? 'Marked Present ✅' : `OD Request Submitted: ${status}`);
+                stopCamera();
             } else {
                 throw new Error('Logging failed');
             }
-
         } catch (error) {
             console.error(error);
-            setScanResult({ success: false, message: 'System error. Is backend running?' });
+            setMessage('Failed to log attendance.');
         } finally {
             setLoading(false);
-            stopCamera(); // Stop camera on result to show outcome clearly
         }
+    };
+
+    const handleODSelectionToggle = (hour: number) => {
+        setSelectedHours(prev => {
+            if (prev.includes(hour)) {
+                return prev.filter(h => h !== hour);
+            } else {
+                return [...prev, hour].sort((a, b) => a - b);
+            }
+        });
     };
 
     const captureAndScan = () => {
@@ -105,7 +132,7 @@ const FaceAttendance = ({ eventId }: FaceAttendanceProps) => {
             if (context) {
                 context.drawImage(video, 0, 0, canvas.width, canvas.height);
                 canvas.toBlob((blob) => {
-                    if (blob) processAttendance(blob);
+                    if (blob) processRecognition(blob);
                 }, 'image/jpeg');
             }
         }
@@ -129,9 +156,10 @@ const FaceAttendance = ({ eventId }: FaceAttendanceProps) => {
                         position: 'relative',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        flexDirection: 'column'
                     }}>
-                        {!isStreamActive && !scanResult && !loading && (
+                        {!isStreamActive && step === 'scanning' && (
                             <Button
                                 variant="contained"
                                 startIcon={<IconScan />}
@@ -142,10 +170,6 @@ const FaceAttendance = ({ eventId }: FaceAttendanceProps) => {
                             </Button>
                         )}
 
-                        {loading && (
-                            <CircularProgress color="secondary" />
-                        )}
-
                         <video
                             ref={videoRef}
                             autoPlay
@@ -154,38 +178,56 @@ const FaceAttendance = ({ eventId }: FaceAttendanceProps) => {
                                 width: '100%',
                                 height: '100%',
                                 objectFit: 'cover',
-                                display: isStreamActive && !loading ? 'block' : 'none'
+                                display: isStreamActive ? 'block' : 'none',
+                                opacity: step === 'verified' || step === 'od_selection' ? 0.4 : 1 // Dim video when options appear
                             }}
                         />
 
-                        {scanResult && !loading && (
-                            <Stack alignItems="center" spacing={1} sx={{ color: 'white' }}>
-                                {scanResult.success ? (
-                                    <IconCheck size={64} color="#4caf50" />
-                                ) : (
-                                    <IconX size={64} color="#f44336" />
-                                )}
+                        {/* Overlays */}
+                        {loading && (
+                            <Box position="absolute" display="flex" flexDirection="column" alignItems="center">
+                                <CircularProgress color="secondary" />
+                                <Typography color="white" mt={1}>Processing...</Typography>
+                            </Box>
+                        )}
+
+                        {message && step === 'scanning' && !loading && (
+                            <Typography color="error" position="absolute" bottom={10} bgcolor="rgba(0,0,0,0.7)" p={1} borderRadius={1}>
+                                {message}
+                            </Typography>
+                        )}
+
+                        {step === 'success' && (
+                            <Stack alignItems="center" spacing={1} sx={{ color: 'white', position: 'absolute', zIndex: 2 }}>
+                                <IconCheck size={64} color="#4caf50" />
                                 <Typography variant="h4" fontWeight={700}>
-                                    {scanResult.name || 'Unknown'}
+                                    {detectedPerson?.name}
                                 </Typography>
-                                <Typography variant="subtitle1">
-                                    {scanResult.message}
+                                <Typography variant="h6">
+                                    {message}
                                 </Typography>
                                 <Button
                                     variant="outlined"
                                     sx={{ mt: 2, color: 'white', borderColor: 'white' }}
                                     onClick={startCamera}
                                 >
-                                    Scan Next
+                                    Scan Next Person
                                 </Button>
                             </Stack>
                         )}
 
-                        <canvas ref={canvasRef} style={{ display: 'none' }} />
+                        {step === 'error' && (
+                            <Stack alignItems="center" spacing={1} sx={{ color: 'white', position: 'absolute', zIndex: 2 }}>
+                                <IconX size={64} color="#f44336" />
+                                <Typography variant="h6">{message}</Typography>
+                                <Button onClick={startCamera} sx={{ color: 'white' }}>Retry</Button>
+                            </Stack>
+                        )}
                     </Box>
 
-                    {/* Scan Button */}
-                    {isStreamActive && !loading && (
+                    {/* Controls Area */}
+
+                    {step === 'scanning' && isStreamActive && !loading && (
                         <Button
                             variant="contained"
                             color="success"
@@ -197,6 +239,78 @@ const FaceAttendance = ({ eventId }: FaceAttendanceProps) => {
                             Capture & Verify
                         </Button>
                     )}
+
+                    {step === 'verified' && detectedPerson && (
+                        <Box width="100%" textAlign="center">
+                            <Typography variant="h4" color="primary" fontWeight={700} gutterBottom>
+                                {detectedPerson.name}
+                            </Typography>
+                            <Typography variant="body1" color="textSecondary" mb={2}>
+                                {detectedPerson.regNo}
+                            </Typography>
+
+                            <Stack direction="row" spacing={2} justifyContent="center">
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    size="large"
+                                    startIcon={<IconUserCheck />}
+                                    onClick={() => submitAttendance('Present')}
+                                >
+                                    Mark Present
+                                </Button>
+                                <Button
+                                    variant="outlined"
+                                    color="warning"
+                                    size="large"
+                                    startIcon={<IconClock />}
+                                    onClick={() => setStep('od_selection')}
+                                >
+                                    Request OD
+                                </Button>
+                            </Stack>
+                            <Button size="small" sx={{ mt: 1 }} onClick={startCamera}>Cancel / Rescan</Button>
+                        </Box>
+                    )}
+
+                    {step === 'od_selection' && (
+                        <Box width="100%">
+                            <Typography variant="h6" align="center" gutterBottom>
+                                Select OD Hours for {detectedPerson?.name}
+                            </Typography>
+
+                            <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="center" mb={2} useFlexGap>
+                                {[1, 2, 3, 4, 5, 6, 7, 8].map((hour) => (
+                                    <Box key={hour}>
+                                        <Button
+                                            variant={selectedHours.includes(hour) ? "contained" : "outlined"}
+                                            color={selectedHours.includes(hour) ? "warning" : "inherit"}
+                                            onClick={() => handleODSelectionToggle(hour)}
+                                            sx={{ minWidth: '40px' }}
+                                        >
+                                            {hour}
+                                        </Button>
+                                    </Box>
+                                ))}
+                            </Stack>
+
+                            <Stack direction="row" spacing={2} justifyContent="center">
+                                <Button
+                                    variant="contained"
+                                    color="warning"
+                                    disabled={selectedHours.length === 0}
+                                    onClick={() => submitAttendance(selectedHours.join(', '))}
+                                >
+                                    Submit OD ({selectedHours.length} slots)
+                                </Button>
+                                <Button variant="text" onClick={() => setStep('verified')}>
+                                    Back
+                                </Button>
+                            </Stack>
+                        </Box>
+                    )}
+
+                    <canvas ref={canvasRef} style={{ display: 'none' }} />
                 </Stack>
             </CardContent>
         </Card>

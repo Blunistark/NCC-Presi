@@ -26,20 +26,50 @@ const mockLiveBreakdown = [
 ];
 
 const LiveEventCard = () => {
-    const [open, setOpen] = useState(false);
+    const [activeEvent, setActiveEvent] = useState<any>(null);
 
-    const totalPresent = mockLiveBreakdown.reduce((acc, curr) => acc + curr.sd + curr.sw, 0);
-    const totalEnrolled = mockLiveBreakdown.reduce((acc, curr) => acc + curr.sdTotal + curr.swTotal, 0);
+    // Poll for active event (In real app, use SWR or React Query)
+    useState(() => {
+        const fetchActive = async () => {
+            try {
+                // Determine URL based on environment (similar to next.config.js logic if needed, or relative)
+                // For client side, relative /api proxy is best if setup, but here we might need direct if not proxied?
+                // Actually, next.config.js proxies /api, so let's try /api/active_event if we map it, 
+                // but we didn't add that to next.config yet? 
+                // Wait, next.config proxies /api/:path*. 
+                // So we should call /api/active_event.
+                // NOTE: We need to ensure /active_event is available via the proxy.
+                const res = await fetch('/api/active_event');
+                if (res.ok) {
+                    const data = await res.json();
+                    setActiveEvent(data);
+                } else {
+                    setActiveEvent(null);
+                }
+            } catch (e) {
+                console.log("No active event");
+            }
+        };
+        fetchActive();
+        const interval = setInterval(fetchActive, 10000); // Poll every 10s
+        return () => clearInterval(interval);
+    });
 
-    // Totals for Footer
-    const totalSDPresent = mockLiveBreakdown.reduce((acc, curr) => acc + curr.sd, 0);
-    const totalSDEnrolled = mockLiveBreakdown.reduce((acc, curr) => acc + curr.sdTotal, 0);
-
-    const totalSWPresent = mockLiveBreakdown.reduce((acc, curr) => acc + curr.sw, 0);
-    const totalSWEnrolled = mockLiveBreakdown.reduce((acc, curr) => acc + curr.swTotal, 0);
-
-    const handleOpen = () => setOpen(true);
-    const handleClose = () => setOpen(false);
+    if (!activeEvent) {
+        return (
+            <Card sx={{ bgcolor: 'grey.300', color: 'text.secondary' }}>
+                <CardContent>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                        <Typography variant="h6" fontWeight={600}>Live Activity</Typography>
+                        <Chip label="OFFLINE" size="small" />
+                    </Stack>
+                    <Typography variant="h4" fontWeight={700} sx={{ mt: 2, mb: 1, opacity: 0.5 }}>
+                        No Active Parade
+                    </Typography>
+                </CardContent>
+            </Card>
+        );
+    }
 
     return (
         <>
@@ -69,7 +99,7 @@ const LiveEventCard = () => {
                         {totalPresent}/{totalEnrolled} Present
                     </Typography>
                     <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>
-                        Saturday Morning Parade
+                        {activeEvent?.Title || 'Ongoing Event'}
                     </Typography>
                     <Typography variant="caption" sx={{ opacity: 0.8 }}>
                         Tap to view detailed breakdown
