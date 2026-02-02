@@ -1,6 +1,7 @@
 frontend/node_modules/
 backend/data/credentials.json
 backend/data/encodings.pickle
+
 __pycache__/
 *.pyc
 .env
