@@ -1,6 +1,7 @@
 FROM continuumio/miniconda3
 
 WORKDIR /app
+ENV PYTHONUNBUFFERED=1
 
 # Install dlib (main bottleneck) and numpy using conda-forge binaries
 RUN conda install -y -c conda-forge dlib numpy cmake && \

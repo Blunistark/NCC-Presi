@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Grid, Box, Typography, Stack, Button } from '@mui/material';
 import PageContainer from '@/app/(DashboardLayout)/components/container/PageContainer';
-import { IconPlus, IconScan } from '@tabler/icons-react';
+import { IconPlus, IconScan, IconBroadcast } from '@tabler/icons-react';
 // components
 import NCCStats from '@/app/(DashboardLayout)/components/dashboard/NCCStats';
 import RecentActivity from '@/app/(DashboardLayout)/components/dashboard/RecentActivity';
@@ -65,6 +65,26 @@ const DashboardView = ({ role }: DashboardViewProps) => {
                                 </Button>
                             </>
                         )}
+                        <Button
+                            variant="outlined"
+                            startIcon={<IconBroadcast className="animate-pulse" />}
+                            onClick={async () => {
+                                try {
+                                    const res = await fetch('http://localhost:8000/refresh_sheet', { method: 'POST' });
+                                    if (res.ok) {
+                                        const data = await res.json();
+                                        alert(`Refreshed! Processed ${data.stats_processed} cadets.`);
+                                    } else {
+                                        alert('Failed to refresh data');
+                                    }
+                                } catch (e) {
+                                    console.error(e);
+                                    alert('Error refreshing data');
+                                }
+                            }}
+                        >
+                            Refresh
+                        </Button>
                         <Button
                             variant="contained"
                             startIcon={<IconPlus />}

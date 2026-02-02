@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Card,
     CardContent,
@@ -19,26 +19,17 @@ import {
 } from '@mui/material';
 import { IconBroadcast, IconX } from '@tabler/icons-react';
 
-const mockLiveBreakdown = [
-    { year: '3rd Year', sd: 15, sdTotal: 18, sw: 10, swTotal: 12 },
-    { year: '2nd Year', sd: 18, sdTotal: 20, sw: 12, swTotal: 15 },
-    { year: '1st Year', sd: 22, sdTotal: 25, sw: 16, swTotal: 18 },
-];
-
 const LiveEventCard = () => {
     const [activeEvent, setActiveEvent] = useState<any>(null);
+    const [open, setOpen] = useState(false);
 
-    // Poll for active event (In real app, use SWR or React Query)
-    useState(() => {
+    const handleOpen = () => setOpen(true);
+    const handleClose = () => setOpen(false);
+
+    // Poll for active event
+    useEffect(() => {
         const fetchActive = async () => {
             try {
-                // Determine URL based on environment (similar to next.config.js logic if needed, or relative)
-                // For client side, relative /api proxy is best if setup, but here we might need direct if not proxied?
-                // Actually, next.config.js proxies /api, so let's try /api/active_event if we map it, 
-                // but we didn't add that to next.config yet? 
-                // Wait, next.config proxies /api/:path*. 
-                // So we should call /api/active_event.
-                // NOTE: We need to ensure /active_event is available via the proxy.
                 const res = await fetch('/api/active_event');
                 if (res.ok) {
                     const data = await res.json();
@@ -51,9 +42,9 @@ const LiveEventCard = () => {
             }
         };
         fetchActive();
-        const interval = setInterval(fetchActive, 10000); // Poll every 10s
+        const interval = setInterval(fetchActive, 10000);
         return () => clearInterval(interval);
-    });
+    }, []);
 
     if (!activeEvent) {
         return (
@@ -70,6 +61,17 @@ const LiveEventCard = () => {
             </Card>
         );
     }
+
+    // Derived Stats
+    const stats = activeEvent.stats || { total: 0, year1: 0, year2: 0, year3: 0 };
+    // Assuming enrollment totals are static or we'd fetch them. For now, we can show just present
+    // Or we can assume 1st yr ~50, 2nd ~50, 3rd ~50 for a rough progress UI or just hide denominator
+
+    const breakdownData = [
+        { year: '3rd Year', count: stats.year3 },
+        { year: '2nd Year', count: stats.year2 },
+        { year: '1st Year', count: stats.year1 }
+    ];
 
     return (
         <>
@@ -96,7 +98,7 @@ const LiveEventCard = () => {
                     </Stack>
 
                     <Typography variant="h3" fontWeight={700} sx={{ mb: 1 }}>
-                        {totalPresent}/{totalEnrolled} Present
+                        {stats.total} Present
                     </Typography>
                     <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>
                         {activeEvent?.Title || 'Ongoing Event'}
@@ -125,28 +127,16 @@ const LiveEventCard = () => {
                             <TableHead>
                                 <TableRow>
                                     <TableCell><Typography variant="subtitle2" fontWeight={600}>Year</Typography></TableCell>
-                                    <TableCell><Typography variant="subtitle2" fontWeight={600}>SD (Boys)</Typography></TableCell>
-                                    <TableCell><Typography variant="subtitle2" fontWeight={600}>SW (Girls)</Typography></TableCell>
                                     <TableCell><Typography variant="subtitle2" fontWeight={600}>Total Presence</Typography></TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {mockLiveBreakdown.map((row) => (
+                                {breakdownData.map((row) => (
                                     <TableRow key={row.year}>
                                         <TableCell><Typography color="textSecondary" variant="subtitle2">{row.year}</Typography></TableCell>
                                         <TableCell>
-                                            <Typography color="textSecondary" variant="subtitle2">
-                                                {row.sd}/{row.sdTotal}
-                                            </Typography>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Typography color="textSecondary" variant="subtitle2">
-                                                {row.sw}/{row.swTotal}
-                                            </Typography>
-                                        </TableCell>
-                                        <TableCell>
                                             <Typography variant="subtitle2" fontWeight={600}>
-                                                {row.sd + row.sw}/{row.sdTotal + row.swTotal}
+                                                {row.count}
                                             </Typography>
                                         </TableCell>
                                     </TableRow>
@@ -154,18 +144,8 @@ const LiveEventCard = () => {
                                 <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
                                     <TableCell><Typography variant="subtitle2" fontWeight={700}>Total</Typography></TableCell>
                                     <TableCell>
-                                        <Typography variant="subtitle2" fontWeight={700}>
-                                            {totalSDPresent}/{totalSDEnrolled}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography variant="subtitle2" fontWeight={700}>
-                                            {totalSWPresent}/{totalSWEnrolled}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
                                         <Typography variant="subtitle2" fontWeight={700} color="primary">
-                                            {totalPresent}/{totalEnrolled}
+                                            {stats.total}
                                         </Typography>
                                     </TableCell>
                                 </TableRow>
