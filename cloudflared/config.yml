@@ -1,0 +1,9 @@
+tunnel: f0d601d3-eb6a-4732-a43c-8c75099dd174
+credentials-file: /etc/cloudflared/f0d601d3-eb6a-4732-a43c-8c75099dd174.json
+
+ingress:
+  - hostname: n8n.hacksters.tech
+    service: http://127.0.0.1:5678
+  - hostname: ncc.hacksters.tech
+    service: http://127.0.0.1:80
+  - service: http_status:404

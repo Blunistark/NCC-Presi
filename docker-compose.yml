@@ -25,6 +25,15 @@ services:
       - BACKEND_URL=http://backend:8000
     restart: always
 
+  tunnel:
+    image: cloudflare/cloudflared
+    container_name: cloudflared_tunnel
+    restart: always
+    network_mode: "host"
+    command: tunnel --config /etc/cloudflared/config.yml run
+    volumes:
+      - ./cloudflared:/etc/cloudflared
+
 networks:
   app_network:
     driver: bridge
