@@ -79,7 +79,7 @@ const ODPage = () => {
                     ) : (
                         <Grid container spacing={3}>
                             {filteredEvents.map((ev, index) => (
-                                <Grid item xs={12} sm={6} md={4} key={ev["Event ID"] || index}>
+                                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={ev["Event ID"] || index}>
                                     <EventODCard
                                         event={ev}
                                         onClick={() => handleCardClick(ev)}
