@@ -81,7 +81,7 @@ const SidebarItems = ({ isCollapsed = false }: { isCollapsed?: boolean }) => {
         collapseSidebar={isCollapsed}
       >
 
-        <Logo img='/images/logos/dark-logo.svg' component={Link} to="/ano">
+        <Logo img='/images/logos/dark-logo.svg' component={Link} to="/">
           {!isCollapsed && "Modernize"}
         </Logo>
 
