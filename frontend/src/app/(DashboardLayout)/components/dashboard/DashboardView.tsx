@@ -51,7 +51,7 @@ const DashboardView = ({ role }: DashboardViewProps) => {
                                     onClick={async () => {
                                         if (confirm('Are you sure you want to END the current event?')) {
                                             try {
-                                                const res = await fetch('http://localhost:8000/end_event', { method: 'POST' });
+                                                const res = await fetch('/api/end_event', { method: 'POST' });
                                                 if (res.ok) alert('Event Ended Successfully');
                                                 else alert('Failed to end event');
                                             } catch (e) {
@@ -70,7 +70,7 @@ const DashboardView = ({ role }: DashboardViewProps) => {
                             startIcon={<IconBroadcast className="animate-pulse" />}
                             onClick={async () => {
                                 try {
-                                    const res = await fetch('http://localhost:8000/refresh_sheet', { method: 'POST' });
+                                    const res = await fetch('/api/refresh_sheet', { method: 'POST' });
                                     if (res.ok) {
                                         const data = await res.json();
                                         alert(`Refreshed! Processed ${data.stats_processed} cadets.`);
