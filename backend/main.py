@@ -286,6 +286,61 @@ class EventCreate(BaseModel):
     date: str # YYYY-MM-DD
     time: str # HH:MM
 
+class LogAttendanceRequest(BaseModel):
+    name: str
+    reg_no: str
+    event_id: str
+    status: str
+
+@app.post("/log_attendance")
+def log_attendance(data: LogAttendanceRequest):
+    """
+    Logs a single attendance record to 'Attendance_Logs'.
+    """
+    global session_attendance_cache
+
+    if not os.path.exists(CREDENTIALS_FILE):
+        raise HTTPException(status_code=500, detail="Credentials missing")
+    
+    # Check cache first
+    if (data.event_id, data.reg_no) in session_attendance_cache:
+         return {"message": "Already marked", "duplicate": True}
+
+    SHEET_ID = '11yk2xohYru3MyqqnXzTYBIr3lFkWbXsVOP2P7PRDbfE'
+    
+    try:
+        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        creds = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_FILE, scope)
+        client = gspread.authorize(creds)
+        spreadsheet = client.open_by_key(SHEET_ID)
+        
+        try:
+             worksheet = spreadsheet.worksheet("Attendance_Logs")
+        except:
+             worksheet = spreadsheet.add_worksheet("Attendance_Logs", 1000, 5)
+             worksheet.append_row(["Timestamp", "Name", "Enrollment ID", "Event ID", "Status"])
+             
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Append Row
+        worksheet.append_row([
+            timestamp,
+            data.name,
+            data.reg_no,
+            data.event_id,
+            data.status
+        ])
+        
+        # Update Cache
+        session_attendance_cache.add((data.event_id, data.reg_no))
+        
+        return {"message": "Attendance logged successfully", "duplicate": False}
+        
+    except Exception as e:
+        print(f"Error logging attendance: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/create_event")
 async def create_event(event: EventCreate):
     """
