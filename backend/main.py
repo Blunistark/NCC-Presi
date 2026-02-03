@@ -29,6 +29,7 @@ CREDENTIALS_FILE = os.path.join(DATA_DIR, "credentials.json")
 # Structure: {"encodings": [array], "names": ["Name1"], "reg_nos": ["123"]}
 known_data = {"encodings": [], "names": [], "reg_nos": []}
 # todays_attendance = set()
+session_attendance_cache = set()
 
 def load_encodings():
     global known_data
