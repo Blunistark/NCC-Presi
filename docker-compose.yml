@@ -29,7 +29,8 @@ services:
     image: cloudflare/cloudflared
     container_name: cloudflared_tunnel
     restart: always
-    network_mode: "host"
+    networks:
+      - app_network
     command: tunnel --config /etc/cloudflared/config.yml run
     volumes:
       - ./cloudflared:/etc/cloudflared
