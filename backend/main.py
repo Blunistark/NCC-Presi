@@ -324,16 +324,16 @@ def log_attendance(
              worksheet = spreadsheet.worksheet("Attendance_Logs")
         except:
              worksheet = spreadsheet.add_worksheet("Attendance_Logs", 1000, 5)
-             worksheet.append_row(["Timestamp", "Name", "Enrollment ID", "Event ID", "Status"])
+             worksheet.append_row(["Timestamp", "Event ID", "Enrollment ID", "Name", "Status"])
              
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
         # Append Row
         worksheet.append_row([
             timestamp,
-            name,
-            reg_no,
             event_id,
+            reg_no,
+            name,
             status
         ])
         
