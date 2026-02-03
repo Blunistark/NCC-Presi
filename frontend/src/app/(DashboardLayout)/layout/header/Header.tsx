@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Box, AppBar, Toolbar, styled, Stack, IconButton, Badge, Button } from '@mui/material';
+import { Box, AppBar, Toolbar, styled, Stack, IconButton, Badge, Button, Typography } from '@mui/material';
 import PropTypes from 'prop-types';
 import Link from 'next/link';
 // components
 import Profile from './Profile';
-import { IconBellRinging, IconMenu } from '@tabler/icons-react';
+import { IconMenu } from '@tabler/icons-react';
 
 interface ItemType {
   toggleMobileSidebar: (event: React.MouseEvent<HTMLElement>) => void;
@@ -55,20 +55,14 @@ const Header = ({ toggleMobileSidebar }: ItemType) => {
         </IconButton>
 
 
-        <IconButton
-          size="large"
-          aria-label="show 11 new notifications"
-          color="inherit"
-          aria-controls="msgs-menu"
-          aria-haspopup="true"
-        >
-          <Badge variant="dot" color="primary">
-            <IconBellRinging size="21" stroke="1.5" />
-          </Badge>
 
-        </IconButton>
-        <Box flexGrow={1} />
-        <Stack spacing={1} direction="row" alignItems="center">
+        <Box flexGrow={1} display="flex" justifyContent="center">
+          <Typography variant="subtitle2" fontWeight={600} textAlign="center" lineHeight={1.2}>
+            1A COY 3KAR BN NCC<br />PRESIDENCY UNIVERSITY
+          </Typography>
+        </Box>
+
+        <Stack spacing={1} direction="row" alignItems="center" sx={{ display: { xs: 'flex', lg: 'none' } }}>
           {isAuthenticated ? (
             <Profile />
           ) : (

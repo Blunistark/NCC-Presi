@@ -13,7 +13,11 @@ import {
 
 import { IconListCheck, IconMail, IconUser } from "@tabler/icons-react";
 
-const Profile = () => {
+interface ProfileProps {
+  isCollapsed?: boolean;
+}
+
+const Profile = ({ isCollapsed }: ProfileProps) => {
   const [anchorEl2, setAnchorEl2] = useState(null);
   const handleClick2 = (event: any) => {
     setAnchorEl2(event.currentTarget);

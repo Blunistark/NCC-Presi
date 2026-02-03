@@ -1,7 +1,6 @@
 import { useMediaQuery, Box, Drawer } from "@mui/material";
 import SidebarItems from "./SidebarItems";
-
-
+import Profile from "../header/Profile";
 
 interface ItemType {
   isMobileSidebarOpen: boolean;
@@ -22,14 +21,12 @@ const MSidebar = ({
   const scrollbarStyles = {
     '&::-webkit-scrollbar': {
       width: '7px',
-
     },
     '&::-webkit-scrollbar-thumb': {
       backgroundColor: '#eff2f7',
       borderRadius: '15px',
     },
   };
-
 
   if (lgUp) {
     return (
@@ -62,14 +59,19 @@ const MSidebar = ({
           <Box
             sx={{
               height: "100%",
+              display: "flex",
+              flexDirection: "column",
             }}
           >
-
-            <Box>
+            <Box sx={{ flexGrow: 1 }}>
               {/* ------------------------------------------- */}
               {/* Sidebar Items */}
               {/* ------------------------------------------- */}
               <SidebarItems />
+            </Box>
+
+            <Box p={2} sx={{ display: 'flex', justifyContent: 'center' }}>
+              <Profile />
             </Box>
           </Box>
         </Drawer>
@@ -83,7 +85,6 @@ const MSidebar = ({
       open={isMobileSidebarOpen}
       onClose={onSidebarClose}
       variant="temporary"
-
       slotProps={{
         paper: {
           sx: {
@@ -96,22 +97,26 @@ const MSidebar = ({
       {/* ------------------------------------------- */}
       {/* Sidebar Box */}
       {/* ------------------------------------------- */}
-      <Box>
-        {/* ------------------------------------------- */}
-        {/* Sidebar Items */}
-        {/* ------------------------------------------- */}
-        <SidebarItems />
+      <Box
+        sx={{
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <Box sx={{ flexGrow: 1 }}>
+          {/* ------------------------------------------- */}
+          {/* Sidebar Items */}
+          {/* ------------------------------------------- */}
+          <SidebarItems />
+        </Box>
+
+        <Box p={2} sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Profile />
+        </Box>
       </Box>
-      {/* ------------------------------------------- */}
-      {/* Sidebar For Mobile */}
-      {/* ------------------------------------------- */}
     </Drawer>
   );
 };
 
 export default MSidebar;
-
-
-
-
-

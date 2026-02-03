@@ -1,9 +1,10 @@
 "use client";
-import { styled, Container, Box } from "@mui/material";
+import { styled, Container, Box, IconButton } from "@mui/material";
 import React, { useState, Activity } from "react";
-import Header from "@/app/(DashboardLayout)/layout/header/Header";
 import Sidebar from "@/app/(DashboardLayout)/layout/sidebar/Sidebar";
+import Header from "@/app/(DashboardLayout)/layout/header/Header";
 import AuthGuard from "@/app/authentication/auth/AuthGuard";
+import { IconMenu2 } from "@tabler/icons-react";
 
 const MainWrapper = styled("div")(() => ({
   display: "flex",
@@ -47,10 +48,14 @@ export default function RootLayout({
         {/* Main Wrapper */}
         {/* ------------------------------------------- */}
         <PageWrapper className="page-wrapper">
+          {/* Header */}
+          <Box>
+            <Header toggleMobileSidebar={() => setMobileSidebarOpen(true)} />
+          </Box>
           {/* ------------------------------------------- */}
           {/* Header */}
           {/* ------------------------------------------- */}
-          <Header toggleMobileSidebar={() => setMobileSidebarOpen(true)} />
+
           {/* ------------------------------------------- */}
           {/* PageContent */}
           {/* ------------------------------------------- */}

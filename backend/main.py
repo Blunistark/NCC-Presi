@@ -914,3 +914,186 @@ def get_strength():
     except Exception as e:
         print(f"Error fetching strength: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+# --- OD Feature ---
+
+def get_cadet_lookup(client, sheet_id):
+    """
+    Builds a lookup dict {enrollment_id: cadet_details_dict} from all Year sheets.
+    """
+    lookup = {}
+    target_sheets = ['3rd Year', '2nd Year', '1st Year']
+    spreadsheet = client.open_by_key(sheet_id)
+    
+    for sheet_name in target_sheets:
+        try:
+            ws = spreadsheet.worksheet(sheet_name)
+            records = ws.get_all_records()
+            for row in records:
+                # Key: Enrollment ID
+                eid = str(row.get("Enrollment ID", "")).strip()
+                if eid:
+                    lookup[eid] = {
+                        "Enrollment ID": eid,
+                        "RANK": row.get("RANK", ""),
+                        "Year": sheet_name,
+                        "DEPT": row.get("DEPT", ""),
+                        "Name": row.get("Name", ""),
+                        "PU ROLL NUMBER": row.get("PU ROLL NUMBER", "")
+                    }
+        except gspread.exceptions.WorksheetNotFound:
+            continue
+    return lookup
+
+@app.get("/event_ods")
+def get_event_ods(event_id: str):
+    """
+    Fetches OD list for a specific event.
+    Syncs data from Attendance_Logs to OD_List sheet.
+    """
+    SHEET_ID = '11yk2xohYru3MyqqnXzTYBIr3lFkWbXsVOP2P7PRDbfE'
+    OD_SHEET_NAME = "OD_List"
+    
+    try:
+        # Auth
+        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        creds = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_FILE, scope)
+        client = gspread.authorize(creds)
+        spreadsheet = client.open_by_key(SHEET_ID)
+        
+        # 1. Get Logs
+        logs_ws = spreadsheet.worksheet("Attendance_Logs")
+        logs = logs_ws.get_all_records()
+        
+        # 2. Get or Create OD Sheet
+        try:
+            od_ws = spreadsheet.worksheet(OD_SHEET_NAME)
+        except gspread.exceptions.WorksheetNotFound:
+            od_ws = spreadsheet.add_worksheet(title=OD_SHEET_NAME, rows=1000, cols=10)
+            # Init Header - Matching User's Format exactly
+            # Sr no, Enrollment no, Rank, Year, Dept, Name, PU Roll nuber, Hours, Event ID
+            od_ws.append_row(["Sr no", "Enrollment no", "Rank", "Year", "Dept", "Name", "PU Roll nuber", "Hours", "Event ID"])
+
+        # 3. Get existing ODs to avoid duplicates
+        existing_ods = od_ws.get_all_records()
+        
+        # Set of (EnrollmentID, EventID) to check existence
+        # Uses keys: "Enrollment no", "Event ID"
+        existing_keys = set()
+        for row in existing_ods:
+             # handle variation in keys just in case, but rely on "Enrollment no"
+             eid = str(row.get("Enrollment no", "")).strip()
+             evid = str(row.get("Event ID", "")).strip()
+             if eid and evid:
+                 existing_keys.add((eid, evid))
+             
+        # 4. Prepare Sync
+        new_rows = []
+        cadet_lookup = None # Lazy load
+        
+        current_max_sr = len(existing_ods)
+        
+        for log in logs:
+            # Check Event Match
+            log_eid = str(log.get("Event ID")).strip()
+            if log_eid != event_id:
+                continue
+                
+            # Check Status for OD
+            status = str(log.get("Status", "")).strip()
+            if status.lower() == "present" or not status:
+                continue
+                
+            # It is an OD
+            enrollment_id = str(log.get("Enrollment ID", "")).strip()
+            
+            # Check if already in OD sheet
+            if (enrollment_id, event_id) in existing_keys:
+                pass
+            else:
+                # New OD entry needed!
+                if cadet_lookup is None:
+                    cadet_lookup = get_cadet_lookup(client, SHEET_ID)
+                
+                details = cadet_lookup.get(enrollment_id)
+                if details:
+                    current_max_sr += 1
+                    # Map to User's Headers:
+                    # Sr no, Enrollment no, Rank, Year, Dept, Name, PU Roll nuber, Hours, Event ID
+                    new_row = [
+                        current_max_sr,
+                        enrollment_id,
+                        details.get("RANK"), # Lookup gives UPPERCASE keys
+                        details.get("Year"),
+                        details.get("DEPT"),
+                        details.get("Name"),
+                        details.get("PU ROLL NUMBER"),
+                        status,  # Hours
+                        event_id
+                    ]
+                    new_rows.append(new_row)
+                    existing_keys.add((enrollment_id, event_id))
+
+        # 5. Batch Append
+        if new_rows:
+            od_ws.append_rows(new_rows)
+            print(f"Synced {len(new_rows)} new OD records.")
+            
+        # 6. Return Data (Fetch fresh from sheet to be authoritative)
+        final_ods = od_ws.get_all_records()
+        
+        # Filter for this event
+        final_list = [
+            row for row in final_ods if str(row.get("Event ID")).strip() == event_id
+        ]
+        
+        return final_list
+
+    except Exception as e:
+        print(f"Error in event_ods: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/recent_events")
+def get_recent_events():
+    """
+    Fetches the last 5 events from Event_Master.
+    """
+    if not os.path.exists(CREDENTIALS_FILE):
+        return []
+        
+    SHEET_ID = '11yk2xohYru3MyqqnXzTYBIr3lFkWbXsVOP2P7PRDbfE'
+    
+    try:
+        # Auth (can reuse client if optimized, but doing fresh for safety)
+        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        creds = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_FILE, scope)
+        client = gspread.authorize(creds)
+        spreadsheet = client.open_by_key(SHEET_ID)
+        
+        try:
+            worksheet = spreadsheet.worksheet("Event_Master")
+        except gspread.exceptions.WorksheetNotFound:
+            return []
+            
+        raw_rows = worksheet.get_all_values()
+        if not raw_rows or len(raw_rows) < 2: 
+            return []
+            
+        headers = raw_rows[0]
+        # Get last 5, reversed
+        data_rows = raw_rows[1:]
+        recent_rows = data_rows[-5:][::-1]
+        
+        events = []
+        for row in recent_rows:
+            ev = {}
+            for col_idx, header in enumerate(headers):
+                if col_idx < len(row):
+                    ev[header] = row[col_idx]
+            events.append(ev)
+            
+        return events
+
+    except Exception as e:
+        print(f"Error fetching recent events: {e}")
+        return []

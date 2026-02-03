@@ -9,17 +9,48 @@ import {
     TimelineContent,
     timelineOppositeContentClasses,
 } from '@mui/lab';
-import { Link, Typography, Box } from '@mui/material';
+import { Link, Typography, Box, CircularProgress } from '@mui/material';
 import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCard';
-import { mockMandatoryParades, mockSocialDrives } from '@/utils/mockEvents';
+import { useState, useEffect } from 'react';
 
 const RecentActivity = () => {
-    // Combine and sort events by date (descending)
-    const allEvents = [
-        ...mockMandatoryParades.map(e => ({ ...e, type: 'Parade', color: 'primary.main' })),
-        ...mockSocialDrives.map(e => ({ ...e, type: 'Social', color: 'secondary.main' }))
-    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-        .slice(0, 5); // Take top 5
+    const [events, setEvents] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchRecent = async () => {
+            try {
+                const res = await fetch('/api/recent_events');
+                if (res.ok) {
+                    const data = await res.json();
+                    setEvents(data);
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchRecent();
+    }, []);
+
+    // Helper to format YYYY-MM-DD
+    const formatDate = (dateStr: string) => {
+        if (!dateStr) return '';
+        const parts = dateStr.split('-');
+        if (parts.length === 3 && parts[0].length === 4) {
+            return `${parts[2]}-${parts[1]}`; // DD-MM for timeline
+        }
+        return dateStr;
+    };
+
+    const getColor = (type: string) => {
+        if (!type) return "primary";
+        const t = type.toLowerCase();
+        if (t.includes('drill') || t.includes('parade')) return "warning";
+        if (t.includes('camp')) return "success";
+        return "primary";
+    };
 
     return (
         <DashboardCard title="Recent Activity">
@@ -30,37 +61,46 @@ const RecentActivity = () => {
                 scrollbarWidth: 'none',
                 '&::-webkit-scrollbar': { display: 'none' }
             }}>
-                <Timeline
-                    className="theme-timeline"
-                    sx={{
-                        p: 0,
-                        mb: '-40px',
-                        [`& .${timelineOppositeContentClasses.root}`]: {
-                            flex: 0.5,
-                            paddingLeft: 0,
-                        },
-                    }}
-                >
-                    {allEvents.map((event, index) => (
-                        <TimelineItem key={`${event.type}-${event.id}`}>
-                            <TimelineOppositeContent>
-                                <Typography variant="body2" color="textSecondary">
-                                    {event.date}
-                                </Typography>
-                            </TimelineOppositeContent>
-                            <TimelineSeparator>
-                                <TimelineDot color={event.type === 'Parade' ? 'primary' : 'secondary'} variant="outlined" />
-                                <TimelineConnector />
-                            </TimelineSeparator>
-                            <TimelineContent>
-                                <Typography fontWeight="600">{event.title}</Typography>
-                                <Typography variant="caption" color="textSecondary">
-                                    Attendance: {event.attended}/{event.totalStrength}
-                                </Typography>
-                            </TimelineContent>
-                        </TimelineItem>
-                    ))}
-                </Timeline>
+                {loading ? (
+                    <Box display="flex" justifyContent="center" p={2}><CircularProgress size={24} /></Box>
+                ) : (
+                    <Timeline
+                        className="theme-timeline"
+                        sx={{
+                            p: 0,
+                            mb: '-40px',
+                            [`& .${timelineOppositeContentClasses.root}`]: {
+                                flex: 0.5,
+                                paddingLeft: 0,
+                            },
+                        }}
+                    >
+                        {events.map((ev, index) => (
+                            <TimelineItem key={index}>
+                                <TimelineOppositeContent>
+                                    <Typography variant="body2" color="textSecondary">
+                                        {formatDate(ev.Date)}
+                                    </Typography>
+                                </TimelineOppositeContent>
+                                <TimelineSeparator>
+                                    <TimelineDot color={getColor(ev.Type)} variant="outlined" />
+                                    <TimelineConnector />
+                                </TimelineSeparator>
+                                <TimelineContent>
+                                    <Typography fontWeight="600">{ev.Title}</Typography>
+                                    <Typography variant="caption" color="textSecondary">
+                                        {ev.Type}
+                                    </Typography>
+                                </TimelineContent>
+                            </TimelineItem>
+                        ))}
+                        {events.length === 0 && (
+                            <Typography variant="body2" textAlign="center" py={2} color="textSecondary">
+                                No recent activity found.
+                            </Typography>
+                        )}
+                    </Timeline>
+                )}
             </Box>
         </DashboardCard>
     );

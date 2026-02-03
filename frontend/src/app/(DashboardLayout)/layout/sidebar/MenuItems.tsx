@@ -5,6 +5,7 @@ import {
   IconFlag,
   IconSpeakerphone,
   IconLogout,
+  IconBriefcase,
 } from "@tabler/icons-react";
 
 import { uniqueId } from "lodash";
@@ -33,6 +34,12 @@ const Menuitems = [
     title: "Parades/Events",
     icon: IconFlag,
     href: "/parades",
+  },
+  {
+    id: uniqueId(),
+    title: "On Duty",
+    icon: IconBriefcase,
+    href: "/od",
   },
   {
     id: uniqueId(),
