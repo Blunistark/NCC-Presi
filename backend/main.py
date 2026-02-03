@@ -293,7 +293,12 @@ class LogAttendanceRequest(BaseModel):
     status: str
 
 @app.post("/log_attendance")
-def log_attendance(data: LogAttendanceRequest):
+def log_attendance(
+    name: str = Form(...),
+    reg_no: str = Form(...),
+    event_id: str = Form(...),
+    status: str = Form(...)
+):
     """
     Logs a single attendance record to 'Attendance_Logs'.
     """
@@ -303,7 +308,7 @@ def log_attendance(data: LogAttendanceRequest):
         raise HTTPException(status_code=500, detail="Credentials missing")
     
     # Check cache first
-    if (data.event_id, data.reg_no) in session_attendance_cache:
+    if (event_id, reg_no) in session_attendance_cache:
          return {"message": "Already marked", "duplicate": True}
 
     SHEET_ID = '11yk2xohYru3MyqqnXzTYBIr3lFkWbXsVOP2P7PRDbfE'
@@ -325,14 +330,14 @@ def log_attendance(data: LogAttendanceRequest):
         # Append Row
         worksheet.append_row([
             timestamp,
-            data.name,
-            data.reg_no,
-            data.event_id,
-            data.status
+            name,
+            reg_no,
+            event_id,
+            status
         ])
         
         # Update Cache
-        session_attendance_cache.add((data.event_id, data.reg_no))
+        session_attendance_cache.add((event_id, reg_no))
         
         return {"message": "Attendance logged successfully", "duplicate": False}
         
