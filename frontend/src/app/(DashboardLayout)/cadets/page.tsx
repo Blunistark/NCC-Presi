@@ -17,7 +17,7 @@ import {
 import PageContainer from '@/app/(DashboardLayout)/components/container/PageContainer';
 import { IconSearch } from '@tabler/icons-react';
 import BlankCard from '@/app/(DashboardLayout)/components/shared/BlankCard';
-import { Cadet } from '@/utils/mockCadets'; // Keeping interface
+import { Cadet } from '@/types';
 import { fetchCadets } from '@/utils/cadetService';
 
 const RANKS_HIERARCHY = ['SUO', 'JUO', 'CSM', 'CQMS', 'CPL', 'LCPL'];

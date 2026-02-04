@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -21,7 +21,9 @@ import {
     Chip,
     Autocomplete,
 } from '@mui/material';
-import { mockCadets } from '@/utils/mockCadets';
+import { fetchCadets } from '@/utils/cadetService';
+import { Cadet } from '@/types';
+
 
 type EventType = 'Mandatory Parade' | 'Social Drive' | 'College Event' | 'Camp' | '';
 type CampType = 'Mandatory' | 'Special' | '';
@@ -47,6 +49,20 @@ const CreateEventDialog = ({ open, onClose, onSuccess }: CreateEventDialogProps)
     });
     const [targetMode, setTargetMode] = useState<'year' | 'individual'>('year');
     const [selectedCadets, setSelectedCadets] = useState<any[]>([]);
+    const [allCadets, setAllCadets] = useState<Cadet[]>([]);
+
+    useEffect(() => {
+        const loadCadets = async () => {
+            try {
+                const data = await fetchCadets();
+                setAllCadets(data);
+            } catch (error) {
+                console.error("Failed to load cadets list");
+            }
+        };
+        loadCadets();
+    }, []);
+
 
     // Camp Specific State
     const [campType, setCampType] = useState<CampType>('Mandatory');
@@ -133,7 +149,7 @@ const CreateEventDialog = ({ open, onClose, onSuccess }: CreateEventDialogProps)
         <Box mb={2}>
             <Autocomplete
                 multiple
-                options={mockCadets}
+                options={allCadets}
                 getOptionLabel={(option) => `${option.rank} ${option.name} (${option.regimentalNumber})`}
                 value={selectedCadets}
                 onChange={(event, newValue) => {

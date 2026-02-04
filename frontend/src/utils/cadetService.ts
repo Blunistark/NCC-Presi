@@ -1,4 +1,4 @@
-import { Cadet } from './mockCadets';
+import { Cadet } from '@/types';
 
 export const fetchCadets = async (): Promise<Cadet[]> => {
     try {
@@ -12,7 +12,7 @@ export const fetchCadets = async (): Promise<Cadet[]> => {
     }
 };
 
-export const fetchCadetById = async (id: number): Promise<Cadet | null> => {
+export const fetchCadetById = async (id: string): Promise<Cadet | null> => {
     try {
         const cadets = await fetchCadets();
         return cadets.find(c => c.id === id) || null;

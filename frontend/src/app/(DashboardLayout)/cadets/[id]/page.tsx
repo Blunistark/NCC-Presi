@@ -6,21 +6,20 @@ import { Grid, Box, Typography, Divider, Stack, Chip, Breadcrumbs, Link as MuiLi
 import { IconArrowLeft } from '@tabler/icons-react';
 import PageContainer from '@/app/(DashboardLayout)/components/container/PageContainer';
 import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCard';
-// import { mockCadets } from '@/utils/mockCadets'; // Removed
 import { fetchCadetById } from '@/utils/cadetService';
-import { Cadet } from '@/utils/mockCadets'; // Interface
+import { Cadet } from '@/types';
 import BlankCard from '@/app/(DashboardLayout)/components/shared/BlankCard';
 
 const CadetProfile = () => {
     const params = useParams();
-    const id = Number(params.id);
+    const id = params.id as string; // Expecting string ID
     const [cadet, setCadet] = useState<Cadet | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
     useEffect(() => {
         const loadCadet = async () => {
-            if (isNaN(id)) {
+            if (!id) {
                 setError('Invalid Cadet ID');
                 setLoading(false);
                 return;
