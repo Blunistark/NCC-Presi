@@ -170,6 +170,19 @@ def import_sheets_data():
         print(f"Sheets sync error: {e}")
 
 if __name__ == "__main__":
-    import_cadets()
-    import_sheets_data()
-    print("Migration Complete.")
+    import sys
+    
+    if len(sys.argv) > 1:
+        command = sys.argv[1]
+        if command == "cadets":
+            import_cadets()
+        elif command == "sheets":
+            import_sheets_data()
+        else:
+            print("Unknown command. Use 'cadets' or 'sheets'")
+    else:
+        # Default behavior (or run all)
+        print("Usage: python import_data.py [cadets|sheets]")
+        # import_cadets()
+        # import_sheets_data()
+
