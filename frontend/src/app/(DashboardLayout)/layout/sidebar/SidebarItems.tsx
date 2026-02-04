@@ -81,9 +81,11 @@ const SidebarItems = ({ isCollapsed = false }: { isCollapsed?: boolean }) => {
         collapseSidebar={isCollapsed}
       >
 
-        <Logo img='/images/logos/dark-logo.svg' component={Link} to="/">
-          {!isCollapsed && "Modernize"}
-        </Logo>
+        <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%', mb: 2 }}>
+          <Logo img='/images/logos/dark-logo.svg' component={Link} to="/">
+            {!isCollapsed && "Modernize"}
+          </Logo>
+        </Box>
 
         {renderMenuItems(Menuitems, pathDirect)}
       </MUI_Sidebar>

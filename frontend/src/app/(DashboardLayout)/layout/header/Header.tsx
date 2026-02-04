@@ -56,10 +56,21 @@ const Header = ({ toggleMobileSidebar }: ItemType) => {
 
 
 
+        {/* Presidency Logo - Left */}
+        <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
+          <img src="/images/logos/presidency-logo.svg" alt="Presidency Logo" height="100" style={{ width: 'auto' }} />
+        </Box>
+
+        {/* Center Text */}
         <Box flexGrow={1} display="flex" justifyContent="center">
           <Typography variant="subtitle2" fontWeight={600} textAlign="center" lineHeight={1.2}>
             1A COY 3KAR BN NCC<br />PRESIDENCY UNIVERSITY
           </Typography>
+        </Box>
+
+        {/* NCC Logo - Right */}
+        <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
+          <img src="/images/logos/ncc-logo.svg" alt="NCC Logo" height="100" style={{ width: 'auto' }} />
         </Box>
 
         <Stack spacing={1} direction="row" alignItems="center" sx={{ display: { xs: 'flex', lg: 'none' } }}>
