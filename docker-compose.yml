@@ -11,6 +11,14 @@ services:
     networks:
       - app_network
     restart: always
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-ncc_db}
+      - DB_HOST=db
+      - DB_PORT=5432
+    depends_on:
+      - db
 
   frontend:
     build: ./frontend
