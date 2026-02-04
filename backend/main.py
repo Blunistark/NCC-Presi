@@ -345,7 +345,12 @@ async def active_event(db: Session = Depends(get_db)):
     """
     try:
         # Find active event
-        event = db.query(models.Event).filter(models.Event.status == "Active").first()
+        # Find active event for TODAY
+        today = datetime.now().date()
+        event = db.query(models.Event).filter(
+            models.Event.status == "Active",
+            models.Event.date == today
+        ).first()
         
         if not event:
              return {"active": False, "message": "No active event"}
