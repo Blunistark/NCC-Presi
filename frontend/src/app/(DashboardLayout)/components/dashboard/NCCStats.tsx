@@ -25,9 +25,9 @@ const NCCStats = () => {
                 const eventsRes = await fetch('/api/events');
                 const eventsData = await eventsRes.json();
 
-                const mandatoryCount = eventsData.filter((e: any) => e.Type === 'Mandatory Parade').length;
-                const socialCount = eventsData.filter((e: any) => e.Type === 'Social Drive').length;
-                const collegeCount = eventsData.filter((e: any) => e.Type === 'College Event').length;
+                const mandatoryCount = eventsData.filter((e: any) => e.type === 'Mandatory Parade').length;
+                const socialCount = eventsData.filter((e: any) => e.type === 'Social Drive').length;
+                const collegeCount = eventsData.filter((e: any) => e.type === 'College Event').length;
 
                 setStatsData({
                     totalStrength,

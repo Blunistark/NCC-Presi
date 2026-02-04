@@ -7,11 +7,11 @@ import { IconCalendar, IconUsers } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 
 interface Event {
-    "Event ID": string;
-    "Title": string;
-    "Date": string;
-    "Time": string;
-    "Type": string;
+    id: string;
+    title: string;
+    date: string;
+    time: string;
+    type: string;
 }
 
 const Camps = () => {
@@ -25,7 +25,7 @@ const Camps = () => {
                 const response = await fetch('/api/events');
                 if (!response.ok) throw new Error('Failed');
                 const data = await response.json();
-                setEvents(data.filter((e: Event) => e.Type === 'Camp'));
+                setEvents(data.filter((e: Event) => e.type === 'Camp'));
             } catch (err) {
                 setError('Failed to load events');
             } finally {
@@ -56,8 +56,8 @@ const Camps = () => {
 
                 <Grid container spacing={3}>
                     {events.map((event) => (
-                        <Grid size={{ xs: 12, sm: 6, md: 4 }} key={event["Event ID"]}>
-                            <Box component={Link} href={`/parades/camps/${event["Event ID"]}`} sx={{ textDecoration: 'none' }}>
+                        <Grid size={{ xs: 12, sm: 6, md: 4 }} key={event.id}>
+                            <Box component={Link} href={`/parades/camps/${event.id}`} sx={{ textDecoration: 'none' }}>
                                 <BlankCard>
                                     <CardContent sx={{ p: 0 }}>
                                         {/* Header Color Strip */}
@@ -66,10 +66,10 @@ const Camps = () => {
                                         <Box sx={{ p: 3 }}>
                                             <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
                                                 <Typography variant="h5" fontWeight={600} color="textPrimary">
-                                                    {event.Title}
+                                                    {event.title}
                                                 </Typography>
                                                 <Chip
-                                                    label={event.Date}
+                                                    label={event.date}
                                                     size="small"
                                                     icon={<IconCalendar size={16} />}
                                                     variant="outlined"
@@ -78,7 +78,7 @@ const Camps = () => {
                                             </Stack>
 
                                             <Typography variant="body2" color="textSecondary" mt={1}>
-                                                Time: {event.Time}
+                                                Time: {event.time}
                                             </Typography>
 
                                             <Stack spacing={2} mt={3}>

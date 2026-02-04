@@ -21,11 +21,11 @@ import { IconArrowLeft, IconRefresh } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 
 interface Event {
-    "Event ID": string;
-    "Title": string;
-    "Date": string;
-    "Time": string;
-    "Type": string;
+    id: string;
+    title: string;
+    date: string;
+    time: string;
+    type: string;
 }
 
 const AttendancePage = () => {
@@ -111,8 +111,8 @@ const AttendancePage = () => {
                                             onChange={(e) => setSelectedEvent(e.target.value)}
                                         >
                                             {activeEvents.map((event) => (
-                                                <MenuItem key={event['Event ID']} value={event['Event ID']}>
-                                                    {event.Title} ({event.Date} | {event.Time})
+                                                <MenuItem key={event.id} value={event.id}>
+                                                    {event.title} ({event.date} | {event.time})
                                                 </MenuItem>
                                             ))}
                                         </Select>

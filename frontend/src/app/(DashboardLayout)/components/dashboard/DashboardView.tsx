@@ -70,16 +70,9 @@ const DashboardView = ({ role }: DashboardViewProps) => {
                             startIcon={<IconBroadcast className="animate-pulse" />}
                             onClick={async () => {
                                 try {
-                                    const res = await fetch('/api/refresh_sheet', { method: 'POST' });
-                                    if (res.ok) {
-                                        const data = await res.json();
-                                        alert(`Refreshed! Processed ${data.stats_processed} cadets.`);
-                                    } else {
-                                        alert('Failed to refresh data');
-                                    }
+                                    window.location.reload();
                                 } catch (e) {
                                     console.error(e);
-                                    alert('Error refreshing data');
                                 }
                             }}
                         >
@@ -115,7 +108,11 @@ const DashboardView = ({ role }: DashboardViewProps) => {
 
                 </Grid>
 
-                <CreateEventDialog open={isDialogOpen} onClose={() => setDialogOpen(false)} />
+                <CreateEventDialog
+                    open={isDialogOpen}
+                    onClose={() => setDialogOpen(false)}
+                    onSuccess={() => window.location.reload()}
+                />
             </Box>
         </PageContainer>
     );

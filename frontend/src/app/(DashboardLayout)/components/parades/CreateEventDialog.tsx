@@ -29,9 +29,10 @@ type CampType = 'Mandatory' | 'Special' | '';
 interface CreateEventDialogProps {
     open: boolean;
     onClose: () => void;
+    onSuccess?: () => void;
 }
 
-const CreateEventDialog = ({ open, onClose }: CreateEventDialogProps) => {
+const CreateEventDialog = ({ open, onClose, onSuccess }: CreateEventDialogProps) => {
     const [eventType, setEventType] = useState<EventType>('');
     const [title, setTitle] = useState('');
     const [date, setDate] = useState('');
@@ -75,6 +76,7 @@ const CreateEventDialog = ({ open, onClose }: CreateEventDialogProps) => {
             if (response.ok) {
                 const result = await response.json();
                 console.log('Event created:', result);
+                if (onSuccess) onSuccess();
                 onClose();
             } else {
                 console.error('Failed to create event');

@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Box,
     Typography,
@@ -19,21 +19,30 @@ import {
     Chip,
     Button,
     Breadcrumbs,
-    Link as MuiLink
+    Link as MuiLink,
+    CircularProgress,
+    Alert
 } from '@mui/material';
 import { IconSearch, IconArrowLeft, IconCheck, IconX } from '@tabler/icons-react';
-import { mockCadets } from '@/utils/mockCadets';
 import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCard';
 import PageContainer from '@/app/(DashboardLayout)/components/container/PageContainer';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
 
 interface EventData {
-    id: number;
+    id: string; // Changed to string
     title: string;
     date: string;
     attended: number;
     totalStrength: number;
+}
+
+interface CadetAttendance {
+    id: string;
+    regimentalNumber: string;
+    rank: string;
+    name: string;
+    year: string;
+    status: string;
 }
 
 interface Props {
@@ -50,7 +59,32 @@ const EventAttendanceView = ({ event, categoryTitle, categoryLink }: Props) => {
         '1st Year': false,
         'Present': false,
         'Absent': false,
+        'OD': false,
     });
+
+    const [attendanceList, setAttendanceList] = useState<CadetAttendance[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        const fetchAttendance = async () => {
+            try {
+                const res = await fetch(`/api/event_attendance/${event.id}`);
+                if (!res.ok) throw new Error('Failed to fetch attendance list');
+                const data = await res.json();
+                setAttendanceList(data);
+            } catch (err) {
+                console.error(err);
+                setError('Could not load attendance list.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (event.id) {
+            fetchAttendance();
+        }
+    }, [event.id]);
 
     const handleFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFilters({
@@ -59,14 +93,7 @@ const EventAttendanceView = ({ event, categoryTitle, categoryLink }: Props) => {
         });
     };
 
-    // Mocking attendance status for this specific event
-    // In a real app, this would come from an API based on event ID
-    const extendedCadets = mockCadets.map((cadet, index) => ({
-        ...cadet,
-        status: (index + event.id) % 5 === 0 ? 'Absent' : 'Present' // Randomized stable mock status
-    }));
-
-    const filteredCadets = extendedCadets.filter((cadet) => {
+    const filteredCadets = attendanceList.filter((cadet) => {
         // 1. Search Filter
         const matchesSearch = cadet.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             cadet.regimentalNumber.toLowerCase().includes(searchTerm.toLowerCase());
@@ -76,8 +103,13 @@ const EventAttendanceView = ({ event, categoryTitle, categoryLink }: Props) => {
         const matchesYear = !yearFiltersActive || filters[cadet.year as keyof typeof filters];
 
         // 3. Status Filters
-        const statusFiltersActive = filters['Present'] || filters['Absent'];
-        const matchesStatus = !statusFiltersActive || filters[cadet.status as keyof typeof filters];
+        const statusFiltersActive = filters['Present'] || filters['Absent'] || filters['OD'];
+        let matchesStatus = true;
+        if (statusFiltersActive) {
+            if (cadet.status === 'Present') matchesStatus = filters['Present'];
+            else if (cadet.status === 'Absent') matchesStatus = filters['Absent'];
+            else matchesStatus = filters['OD']; // Treat anything else as OD
+        }
 
         return matchesSearch && matchesYear && matchesStatus;
     });
@@ -165,60 +197,112 @@ const EventAttendanceView = ({ event, categoryTitle, categoryLink }: Props) => {
                                     control={<Checkbox size='small' checked={filters['Absent']} onChange={handleFilterChange} name="Absent" color="error" />}
                                     label={<Typography variant="body2">Absent</Typography>}
                                 />
+                                <FormControlLabel
+                                    control={<Checkbox size='small' checked={filters['OD']} onChange={handleFilterChange} name="OD" color="warning" />}
+                                    label={<Typography variant="body2">OD</Typography>}
+                                />
                             </FormGroup>
                         </Box>
                     </Stack>
 
-                    {/* Attendance Table */}
-                    <TableContainer component={Paper} elevation={0} variant="outlined">
-                        <Table sx={{ minWidth: 650 }} aria-label="attendance table">
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell><strong>Regimental No</strong></TableCell>
-                                    <TableCell><strong>Rank</strong></TableCell>
-                                    <TableCell><strong>Name</strong></TableCell>
-                                    <TableCell><strong>Year</strong></TableCell>
-                                    <TableCell align="center"><strong>Status</strong></TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {filteredCadets.map((cadet) => (
-                                    <TableRow
-                                        key={cadet.id}
-                                        sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                                    >
-                                        <TableCell component="th" scope="row">
-                                            <Typography variant="body2">{cadet.regimentalNumber}</Typography>
-                                        </TableCell>
-                                        <TableCell>{cadet.rank}</TableCell>
-                                        <TableCell>
-                                            <Typography variant="subtitle2" fontWeight={600}>
-                                                {cadet.name}
-                                            </Typography>
-                                        </TableCell>
-                                        <TableCell>{cadet.year}</TableCell>
-                                        <TableCell align="center">
-                                            <Chip
-                                                label={cadet.status}
-                                                color={cadet.status === 'Present' ? 'success' : 'error'}
-                                                size="small"
-                                                icon={cadet.status === 'Present' ? <IconCheck size={16} /> : <IconX size={16} />}
-                                            />
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                                {filteredCadets.length === 0 && (
-                                    <TableRow>
-                                        <TableCell colSpan={5} align="center">
-                                            <Box py={3}>
-                                                <Typography color="textSecondary">No records found</Typography>
-                                            </Box>
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
+                    {/* Attendance Lists */}
+                    {loading ? (
+                        <Box display="flex" justifyContent="center" py={4}><CircularProgress /></Box>
+                    ) : error ? (
+                        <Alert severity="error">{error}</Alert>
+                    ) : (
+                        <Box>
+                            {/* Present & OD List */}
+                            <Typography variant="h6" color="success.main" mb={2}>Present / OD</Typography>
+                            <TableContainer component={Paper} elevation={0} variant="outlined" sx={{ mb: 4 }}>
+                                <Table sx={{ minWidth: 650 }} aria-label="present table">
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell><strong>Regimental No</strong></TableCell>
+                                            <TableCell><strong>Rank</strong></TableCell>
+                                            <TableCell><strong>Name</strong></TableCell>
+                                            <TableCell><strong>Year</strong></TableCell>
+                                            <TableCell align="center"><strong>Status</strong></TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {filteredCadets.filter(c => c.status === 'Present' || c.status !== 'Absent').map((cadet) => (
+                                            <TableRow key={cadet.id}>
+                                                <TableCell component="th" scope="row">
+                                                    <Typography variant="body2">{cadet.regimentalNumber}</Typography>
+                                                </TableCell>
+                                                <TableCell>{cadet.rank}</TableCell>
+                                                <TableCell>
+                                                    <Typography variant="subtitle2" fontWeight={600}>
+                                                        {cadet.name}
+                                                    </Typography>
+                                                </TableCell>
+                                                <TableCell>{cadet.year}</TableCell>
+                                                <TableCell align="center">
+                                                    <Chip
+                                                        label={cadet.status}
+                                                        color={cadet.status === 'Present' ? 'success' : 'warning'}
+                                                        size="small"
+                                                        icon={cadet.status === 'Present' ? <IconCheck size={16} /> : undefined}
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                        {filteredCadets.filter(c => c.status !== 'Absent').length === 0 && (
+                                            <TableRow>
+                                                <TableCell colSpan={5} align="center">No cadets present.</TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+
+                            {/* Absent List */}
+                            <Typography variant="h6" color="error.main" mb={2}>Absent</Typography>
+                            <TableContainer component={Paper} elevation={0} variant="outlined">
+                                <Table sx={{ minWidth: 650 }} aria-label="absent table">
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell><strong>Regimental No</strong></TableCell>
+                                            <TableCell><strong>Rank</strong></TableCell>
+                                            <TableCell><strong>Name</strong></TableCell>
+                                            <TableCell><strong>Year</strong></TableCell>
+                                            <TableCell align="center"><strong>Status</strong></TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {filteredCadets.filter(c => c.status === 'Absent').map((cadet) => (
+                                            <TableRow key={cadet.id}>
+                                                <TableCell component="th" scope="row">
+                                                    <Typography variant="body2">{cadet.regimentalNumber}</Typography>
+                                                </TableCell>
+                                                <TableCell>{cadet.rank}</TableCell>
+                                                <TableCell>
+                                                    <Typography variant="subtitle2" fontWeight={600}>
+                                                        {cadet.name}
+                                                    </Typography>
+                                                </TableCell>
+                                                <TableCell>{cadet.year}</TableCell>
+                                                <TableCell align="center">
+                                                    <Chip
+                                                        label="Absent"
+                                                        color="error"
+                                                        size="small"
+                                                        icon={<IconX size={16} />}
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                        {filteredCadets.filter(c => c.status === 'Absent').length === 0 && (
+                                            <TableRow>
+                                                <TableCell colSpan={5} align="center">No cadets absent.</TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        </Box>
+                    )}
                 </Box>
             </DashboardCard>
         </PageContainer>

@@ -7,12 +7,13 @@ import { IconCalendar, IconUsers } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 
 interface Event {
-    "Event ID": string;
-    "Title": string;
-    "Date": string;
-    "Time": string;
-    "Type": string;
-    "Created At"?: string;
+    id: string;
+    title: string;
+    date: string;
+    time?: string;
+    type: string;
+    status: string;
+    created_at?: string;
 }
 
 const MandatoryParades = () => {
@@ -28,7 +29,7 @@ const MandatoryParades = () => {
                 const data = await response.json();
 
                 // Filter for Mandatory Parades
-                const mandatoryEvents = data.filter((e: Event) => e.Type === 'Mandatory Parade');
+                const mandatoryEvents = data.filter((e: Event) => e.type === 'Mandatory Parade');
                 setEvents(mandatoryEvents);
             } catch (err) {
                 console.error(err);
@@ -66,16 +67,9 @@ const MandatoryParades = () => {
 
                 <Grid container spacing={3}>
                     {events.map((parade) => {
-                        // Placeholder stats until 'Event_Strength' integration
-                        const attended = 0;
-                        const totalStrength = 100; // Default placeholder
-                        const participation = 0;
-
-                        let progressColor: "primary" | "secondary" | "error" | "info" | "success" | "warning" | "inherit" = "secondary";
-
                         return (
-                            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={parade["Event ID"]}>
-                                <Box component={Link} href={`/parades/mandatory/${parade["Event ID"]}`} sx={{ textDecoration: 'none' }}>
+                            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={parade.id}>
+                                <Box component={Link} href={`/parades/mandatory/${parade.id}`} sx={{ textDecoration: 'none' }}>
                                     <BlankCard>
                                         <CardContent sx={{ p: 0 }}>
                                             {/* Header Color Strip */}
@@ -84,10 +78,10 @@ const MandatoryParades = () => {
                                             <Box sx={{ p: 3 }}>
                                                 <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
                                                     <Typography variant="h5" fontWeight={600} color="textPrimary">
-                                                        {parade.Title}
+                                                        {parade.title}
                                                     </Typography>
                                                     <Chip
-                                                        label={parade.Date}
+                                                        label={parade.date}
                                                         size="small"
                                                         icon={<IconCalendar size={16} />}
                                                         variant="outlined"
@@ -95,9 +89,8 @@ const MandatoryParades = () => {
                                                     />
                                                 </Stack>
 
-                                                {/* Hidden Stats for now as we don't have them in this API response yet */}
                                                 <Typography variant="body2" color="textSecondary" mt={1}>
-                                                    Time: {parade.Time}
+                                                    Time: {parade.time || 'N/A'}
                                                 </Typography>
 
                                                 <Stack spacing={2} mt={3}>
@@ -109,7 +102,7 @@ const MandatoryParades = () => {
                                                             </Typography>
                                                         </Stack>
                                                         <Typography variant="h6" fontWeight={700} color="textPrimary">
-                                                            Active
+                                                            {parade.status}
                                                         </Typography>
                                                     </Stack>
                                                 </Stack>

@@ -54,9 +54,9 @@ const AttendancePage = () => {
     useEffect(() => {
         const fetchAttendance = async () => {
             try {
-                const res = await fetch('/api/attendance-summary');
-                if (!res.ok) throw new Error("Failed to fetch");
-                const data = await res.json();
+                const response = await fetch('/api/attendance-summary');
+                if (!response.ok) throw new Error("Failed to fetch");
+                const data = await response.json();
                 setRecords(data);
             } catch (e) {
                 setError('Failed to load attendance records');

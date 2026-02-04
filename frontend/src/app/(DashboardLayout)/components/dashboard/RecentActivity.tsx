@@ -79,17 +79,17 @@ const RecentActivity = () => {
                             <TimelineItem key={index}>
                                 <TimelineOppositeContent>
                                     <Typography variant="body2" color="textSecondary">
-                                        {formatDate(ev.Date)}
+                                        {formatDate(ev.date)}
                                     </Typography>
                                 </TimelineOppositeContent>
                                 <TimelineSeparator>
-                                    <TimelineDot color={getColor(ev.Type)} variant="outlined" />
+                                    <TimelineDot color={getColor(ev.type)} variant="outlined" />
                                     <TimelineConnector />
                                 </TimelineSeparator>
                                 <TimelineContent>
-                                    <Typography fontWeight="600">{ev.Title}</Typography>
+                                    <Typography fontWeight="600">{ev.title}</Typography>
                                     <Typography variant="caption" color="textSecondary">
-                                        {ev.Type}
+                                        {ev.type}
                                     </Typography>
                                 </TimelineContent>
                             </TimelineItem>

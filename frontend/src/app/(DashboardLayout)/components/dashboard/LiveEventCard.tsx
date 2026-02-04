@@ -101,7 +101,7 @@ const LiveEventCard = () => {
                         {stats.total} Present
                     </Typography>
                     <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>
-                        {activeEvent?.Title || 'Ongoing Event'}
+                        {activeEvent?.title || 'Ongoing Event'}
                     </Typography>
                     <Typography variant="caption" sx={{ opacity: 0.8 }}>
                         Tap to view detailed breakdown
